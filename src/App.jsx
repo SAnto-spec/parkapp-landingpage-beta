@@ -2,14 +2,473 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   QrCode, MapPin, CreditCard, Smartphone, LayoutDashboard, Calendar, Lock, AlertOctagon,
   ShieldCheck, BookOpen, Users, BarChart3, ShieldAlert, Shield, ArrowRight, CheckCircle2,
-  User, Mail, Building2, Play, Sparkles, Menu, X, ChevronRight, Download, Laptop, FileText, Info
+  User, Mail, Building2, Play, Sparkles, Menu, X, ChevronRight, Download, Laptop, FileText, Info,
+  Copy, Terminal, Search, Database, RefreshCw, Code
 } from 'lucide-react';
+
+
+// ====================================================
+// PARKWISE PLATFORM DEV PORTAL API SCHEMAS
+// ====================================================
+const API_DOCS_DATA = [
+  {
+    id: 'overview',
+    title: 'Overview & Base URLs',
+    category: 'Getting Started',
+    auth: 'None',
+    desc: 'Welcome to the ParkWise Platform API reference portal. The ParkWise REST API powers the mobile apps, guard exit/entry scanners, resident portals, and admin management consoles. All endpoints are versioned under /api/v1 and return JSON-formatted payloads.',
+    customHtml: 'overview'
+  },
+  {
+    id: 'authentication',
+    title: 'Authentication & Enums',
+    category: 'Getting Started',
+    auth: 'None',
+    desc: 'Protected endpoints require JWT authentication. Obtain an access token via /login/ or /register/ and pass it in the Authorization header as a Bearer credentials object.',
+    customHtml: 'authentication'
+  },
+  {
+    id: 'auth-register',
+    title: 'Register Resident/Admin',
+    category: 'Authentication',
+    method: 'POST',
+    path: '/api/v1/auth/register/',
+    auth: 'Public',
+    desc: 'Registers a normal resident user or a society administrator. A resident can optionally submit a society join code (e.g. AB12CD34) to create a pending membership request. An admin must submit society profiles.',
+    params: [
+      { name: 'email', type: 'string', required: true, desc: 'Unique email address' },
+      { name: 'phone', type: 'string', required: true, desc: '10-digit mobile number' },
+      { name: 'full_name', type: 'string', required: true, desc: 'Full legal name' },
+      { name: 'password', type: 'string', required: true, desc: 'Minimum 8 characters with numbers/symbols' },
+      { name: 'role', type: 'string', required: true, desc: 'Must be "user" or "society_admin"' },
+      { name: 'society_join_code', type: 'string', required: false, desc: 'For users joining a society (e.g., AB12CD34)' },
+      { name: 'flat_number', type: 'string', required: false, desc: 'Flat number identifier (e.g., A-401)' }
+    ],
+    requestHeaders: { 'Content-Type': 'application/json' },
+    requestBody: {
+      email: "user@example.com",
+      phone: "9876543210",
+      full_name: "Example User",
+      password: "Password@123",
+      role: "user",
+      society_join_code: "AB12CD34",
+      flat_number: "A-401",
+      floor_number: "4"
+    },
+    responseBody: {
+      user: {
+        id: "usr_9a8b7c6d",
+        email: "user@example.com",
+        phone: "9876543210",
+        full_name: "Example User",
+        role: "user",
+        approval_status: "approved",
+        society: null,
+        society_name: null
+      },
+      membership_status: "pending_approval",
+      tokens: {
+        refresh: "eyJhbGciOiJIUzI1NiIsInR5...",
+        access: "eyJhbGciOiJIUzI1NiIsInR5..."
+      }
+    }
+  },
+  {
+    id: 'auth-login',
+    title: 'User Login',
+    category: 'Authentication',
+    method: 'POST',
+    path: '/api/v1/auth/login/',
+    auth: 'Public',
+    desc: 'Exchange credentials (email and password) for valid JWT access and refresh tokens. Access tokens expire after 30 minutes, and refresh tokens can be rotated for up to 7 days.',
+    params: [
+      { name: 'email', type: 'string', required: true, desc: 'Registered email address' },
+      { name: 'password', type: 'string', required: true, desc: 'Account password' }
+    ],
+    requestHeaders: { 'Content-Type': 'application/json' },
+    requestBody: {
+      email: "user@example.com",
+      password: "Password@123"
+    },
+    responseBody: {
+      refresh: "eyJhbGciOiJIUzI1NiIsInR5...",
+      access: "eyJhbGciOiJIUzI1NiIsInR5..."
+    }
+  },
+  {
+    id: 'auth-profile',
+    title: 'Get/Update Profile',
+    category: 'Authentication',
+    method: 'PATCH',
+    path: '/api/v1/auth/profile/',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves or partially updates details of the authenticated user. Fields like phone, full_name, flat_number, and floor_number can be patched.',
+    params: [
+      { name: 'full_name', type: 'string', required: false, desc: 'Updated legal name' },
+      { name: 'flat_number', type: 'string', required: false, desc: 'Updated flat identifier' },
+      { name: 'floor_number', type: 'string', required: false, desc: 'Updated floor level' }
+    ],
+    requestBody: {
+      full_name: "Updated Name",
+      flat_number: "B-202",
+      floor_number: "2"
+    },
+    responseBody: {
+      id: "usr_9a8b7c6d",
+      email: "user@example.com",
+      phone: "9876543210",
+      full_name: "Updated Name",
+      role: "user",
+      flat_number: "B-202",
+      floor_number: "2",
+      approval_status: "approved"
+    }
+  },
+  {
+    id: 'vehicles',
+    title: 'Add User Vehicle',
+    category: 'Authentication',
+    method: 'POST',
+    path: '/api/v1/auth/vehicles/',
+    auth: 'Bearer JWT',
+    desc: 'Registers a personal vehicle (car or bike) under the user account. Soft delete is supported via DELETE method which marks vehicle active status as false.',
+    params: [
+      { name: 'vehicle_type', type: 'string', required: true, desc: 'Must be "car" or "bike"' },
+      { name: 'registration_no', type: 'string', required: true, desc: 'Plate registration number (e.g. MH01AB1234)' },
+      { name: 'make_model', type: 'string', required: true, desc: 'Vehicle make and model description (e.g. Hyundai i20)' }
+    ],
+    requestBody: {
+      vehicle_type: "car",
+      registration_no: "MH01AB1234",
+      make_model: "Hyundai i20"
+    },
+    responseBody: {
+      id: "veh_1a2b3c4d",
+      vehicle_type: "car",
+      registration_no: "MH01AB1234",
+      make_model: "Hyundai i20",
+      is_active: true
+    }
+  },
+  {
+    id: 'societies-public',
+    title: 'Public Society List',
+    category: 'Societies & Places',
+    method: 'GET',
+    path: '/api/v1/societies/public/',
+    auth: 'Public',
+    desc: 'Returns a list of all active registered housing societies on the ParkWise network along with total capacity and current available slot counters.',
+    params: [],
+    responseBody: [
+      {
+        id: "soc_5e4f3g2h",
+        name: "Green Heights Society",
+        city: "Mumbai",
+        pincode: "400001",
+        total_slots: 40,
+        available_slots: 18
+      },
+      {
+        id: "soc_7x8y9z0w",
+        name: "Palace Orchards",
+        city: "Mumbai",
+        pincode: "400053",
+        total_slots: 80,
+        available_slots: 34
+      }
+    ]
+  },
+  {
+    id: 'societies-search',
+    title: 'Search Available Parking',
+    category: 'Societies & Places',
+    method: 'POST',
+    path: '/api/v1/societies/search/',
+    auth: 'Bearer JWT',
+    desc: 'Searches nearby housing societies that have at least one approved slot available for the requested time frame, duration, and vehicle type within a specified radius.',
+    params: [
+      { name: 'destination_text', type: 'string', required: true, desc: 'Name of destination landmark (e.g. Bandra West)' },
+      { name: 'destination_lat', type: 'number', required: true, desc: 'Latitude coordinate of destination' },
+      { name: 'destination_lng', type: 'number', required: true, desc: 'Longitude coordinate of destination' },
+      { name: 'booking_date', type: 'string', required: true, desc: 'Format YYYY-MM-DD' },
+      { name: 'start_time', type: 'string', required: true, desc: 'Format HH:MM:SS' },
+      { name: 'duration_minutes', type: 'number', required: true, desc: 'Duration in minutes (Min: 30, Max: 1440)' },
+      { name: 'vehicle_type', type: 'string', required: true, desc: 'Must be "car" or "bike"' },
+      { name: 'search_radius_km', type: 'number', required: false, desc: 'Default: 10km' }
+    ],
+    requestBody: {
+      destination_text: "Bandra West",
+      destination_lat: 19.0600,
+      destination_lng: 72.8365,
+      booking_date: "2026-05-18",
+      start_time: "14:00:00",
+      duration_minutes: 120,
+      vehicle_type: "car",
+      search_radius_km: 10
+    },
+    responseBody: [
+      {
+        society_id: "soc_5e4f3g2h",
+        society_name: "Green Heights",
+        distance_km: 3.4,
+        hourly_rate: "50.00",
+        available_slots_count: 5,
+        latitude: 19.0760,
+        longitude: 72.8777
+      }
+    ]
+  },
+  {
+    id: 'slots-list',
+    title: 'List Slots in Society',
+    category: 'Parking Slots',
+    method: 'GET',
+    path: '/api/v1/societies/{society_id}/slots/',
+    auth: 'Bearer JWT',
+    desc: 'Lists all slots inside a specific housing society. Supports highly active parameters for filtering availability by booking date, start time, and duration.',
+    params: [
+      { name: 'slot_type', type: 'string', required: false, desc: 'Filter by type: "car" or "bike"' },
+      { name: 'state', type: 'string', required: false, desc: 'Filter by state: "available", "reserved", etc.' },
+      { name: 'booking_date', type: 'string', required: false, desc: 'Required when testing active availability (YYYY-MM-DD)' },
+      { name: 'start_time', type: 'string', required: false, desc: 'Required when testing active availability (HH:MM:SS)' },
+      { name: 'duration_minutes', type: 'number', required: false, desc: 'Filter by duration window' }
+    ],
+    responseBody: [
+      {
+        id: "slt_4a3b2c1d",
+        slot_number: "A-101",
+        floor: "1",
+        slot_type: "car",
+        hourly_rate: "50.00",
+        state: "available"
+      }
+    ]
+  },
+  {
+    id: 'bookings-create',
+    title: 'Create Booking Lock',
+    category: 'Bookings & QR',
+    method: 'POST',
+    path: '/api/v1/bookings/',
+    auth: 'Bearer JWT',
+    desc: 'Creates a 5-minute pre-booking lock on the designated slot. The booking status remains pending_payment until payment verification succeeds.',
+    params: [
+      { name: 'slot_id', type: 'string', required: true, desc: 'UUID identifier of the target slot' },
+      { name: 'vehicle_id', type: 'string', required: true, desc: 'UUID identifier of the user vehicle' },
+      { name: 'start_time', type: 'string', required: true, desc: 'ISO 8601 string (e.g. 2026-05-18T14:00:00+05:30)' },
+      { name: 'end_time', type: 'string', required: true, desc: 'ISO 8601 string (e.g. 2026-05-18T16:00:00+05:30)' }
+    ],
+    requestBody: {
+      slot_id: "slt_4a3b2c1d",
+      vehicle_id: "veh_1a2b3c4d",
+      start_time: "2026-05-18T14:00:00+05:30",
+      end_time: "2026-05-18T16:00:00+05:30"
+    },
+    responseBody: {
+      id: "bkg_0z9y8x7w",
+      booking_number: "BK-20260518-ABC123",
+      amount: "100.00",
+      status: "pending_payment",
+      payment_status: "created",
+      lock_expires_at: "2026-05-18T13:15:00Z"
+    }
+  },
+  {
+    id: 'payments-initiate',
+    title: 'Initiate Checkout Payment',
+    category: 'Payments',
+    method: 'POST',
+    path: '/api/v1/payments/initiate/',
+    auth: 'Bearer JWT',
+    desc: 'Initiates a payment session via Stripe or Razorpay for a pending booking. Returns the gateway session IDs and direct checkout redirect URLs.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of the pending booking' },
+      { name: 'gateway', type: 'string', required: true, desc: 'Gateway: "stripe" or "razorpay"' },
+      { name: 'embedded', type: 'boolean', required: false, desc: 'Use embedded checkout sheets (Stripe only)' }
+    ],
+    requestBody: {
+      booking_id: "bkg_0z9y8x7w",
+      gateway: "stripe",
+      embedded: false
+    },
+    responseBody: {
+      id: "pay_1c2d3e4f",
+      booking: "bkg_0z9y8x7w",
+      payment_type: "booking",
+      amount: "100.00",
+      currency: "INR",
+      provider: "stripe",
+      stripe_checkout_session_id: "cs_test_a1b2c3d4",
+      status: "created",
+      checkout_url: "https://checkout.stripe.com/pay/cs_test_a1b2c3d4"
+    }
+  },
+  {
+    id: 'qr-entry',
+    title: 'Validate Entry Scan',
+    category: 'QR Gate Scans',
+    method: 'POST',
+    path: '/api/v1/qr/entry/',
+    auth: 'Bearer JWT (Guard)',
+    desc: 'Submitted by gate guards equipped with can_scan_entry permissions. Decrypts the signed QR token, registers gate entry time, sets booking state to active, and marks slot occupied.',
+    params: [
+      { name: 'qr_token', type: 'string', required: true, desc: 'Signed, cryptographically secure booking QR token' }
+    ],
+    requestBody: {
+      qr_token: "signed-booking-qr-token-abcde..."
+    },
+    responseBody: {
+      status: "entry_granted",
+      booking_id: "bkg_0z9y8x7w",
+      booking_number: "BK-20260518-ABC123",
+      slot_number: "A-101",
+      vehicle_number: "MH01AB1234",
+      owner_name: "Example User",
+      payment_status: "captured",
+      entry_time: "2026-05-18T14:05:00+05:30",
+      exit_time: null,
+      overstay: false,
+      penalty: null
+    }
+  },
+  {
+    id: 'penalties-list',
+    title: 'List Unpaid Penalties',
+    category: 'Penalties',
+    method: 'GET',
+    path: '/api/v1/penalties/',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves all unpaid/paid overstay and layout violation penalties assigned to the authenticated user account.',
+    params: [
+      { name: 'status', type: 'string', required: false, desc: 'Filter by: "unpaid", "paid", "waived"' }
+    ],
+    responseBody: [
+      {
+        id: "pnl_4d3e2f1g",
+        booking: "bkg_0z9y8x7w",
+        amount: "150.00",
+        reason: "Overstay violation (32 minutes over layout booking limits)",
+        status: "unpaid"
+      }
+    ]
+  }
+];
+
+// Custom JSON syntax colorizer helper
+function highlightJson(obj) {
+  if (!obj) return '';
+  const jsonStr = JSON.stringify(obj, null, 2);
+  return jsonStr.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    (match) => {
+      let cls = 'json-number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'json-key';
+        } else {
+          cls = 'json-string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'json-boolean';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return `<span class="\${cls}">\${match}</span>`;
+    }
+  );
+}
+
+// cURL dynamic code snippet generator
+function generateCurl(endpoint) {
+  const method = endpoint.method || 'GET';
+  const url = `https://api.parkease.com\${endpoint.path}`;
+  let curl = `<span class="curl-method">curl</span> -X <span class="curl-method">\${method}</span> <span class="curl-url">"\${url}"</span> \\\n`;
+  
+  if (endpoint.auth === 'Bearer JWT' || endpoint.auth === 'Bearer JWT (Guard)') {
+    curl += `  -H <span class="curl-header">"Authorization: Bearer YOUR_ACCESS_TOKEN"</span> \\\n`;
+  }
+  
+  if (endpoint.requestHeaders) {
+    Object.entries(endpoint.requestHeaders).forEach(([key, val]) => {
+      curl += `  -H <span class="curl-header">"\${key}: \${val}"</span> \\\n`;
+    });
+  }
+  
+  if (endpoint.requestBody && Object.keys(endpoint.requestBody).length > 0) {
+    curl += `  -d <span class="curl-data">'${JSON.stringify(endpoint.requestBody, null, 2)}'</span>`;
+  } else {
+    curl = curl.trim().replace(/\\\s*$/, '');
+  }
+  return curl;
+}
+
+// JavaScript Fetch dynamic code snippet generator
+function generateJS(endpoint) {
+  const method = endpoint.method || 'GET';
+  const url = `https://api.parkease.com\${endpoint.path}`;
+  let jsCode = `<span class="json-key">const</span> response = <span class="json-key">await</span> fetch(<span class="json-string">"\${url}"</span>, {\n`;
+  jsCode += `  method: <span class="json-string">"\${method}"</span>,\n`;
+  
+  jsCode += `  headers: {\n`;
+  if (endpoint.auth === 'Bearer JWT' || endpoint.auth === 'Bearer JWT (Guard)') {
+    jsCode += `    <span class="json-string">"Authorization"</span>: <span class="json-string">"Bearer YOUR_ACCESS_TOKEN"</span>,\n`;
+  }
+  if (endpoint.requestHeaders) {
+    Object.entries(endpoint.requestHeaders).forEach(([key, val]) => {
+      jsCode += `    <span class="json-string">"\${key}"</span>: <span class="json-string">"\${val}"</span>,\n`;
+    });
+  }
+  jsCode += `  },\n`;
+  
+  if (endpoint.requestBody && Object.keys(endpoint.requestBody).length > 0) {
+    jsCode += `  body: JSON.stringify(\${JSON.stringify(endpoint.requestBody, null, 2).replace(/\\n/g, '\\n  ')})\n`;
+  }
+  jsCode += `});\n`;
+  jsCode += `<span class="json-key">const</span> data = <span class="json-key">await</span> response.json();`;
+  return jsCode;
+}
+
+// Python requests dynamic code snippet generator
+function generatePython(endpoint) {
+  const method = (endpoint.method || 'GET').toLowerCase();
+  const url = `https://api.parkease.com\${endpoint.path}`;
+  let py = `<span class="json-key">import</span> requests\n\n`;
+  py += `url = <span class="json-string">"\${url}"</span>\n`;
+  py += `headers = {\n`;
+  if (endpoint.auth === 'Bearer JWT' || endpoint.auth === 'Bearer JWT (Guard)') {
+    py += `    <span class="json-string">"Authorization"</span>: <span class="json-string">"Bearer YOUR_ACCESS_TOKEN"</span>,\n`;
+  }
+  if (endpoint.requestHeaders) {
+    Object.entries(endpoint.requestHeaders).forEach(([key, val]) => {
+      py += `    <span class="json-string">"\${key}"</span>: <span class="json-string">"\${val}"</span>,\n`;
+    });
+  }
+  py += `}\n`;
+  
+  if (endpoint.requestBody && Object.keys(endpoint.requestBody).length > 0) {
+    py += `data = \${JSON.stringify(endpoint.requestBody, null, 4).replace(/true/g, 'True').replace(/false/g, 'False').replace(/null/g, 'None')}\n`;
+    py += `response = requests.\${method}(url, headers=headers, json=data)\n`;
+  } else {
+    py += `response = requests.\${method}(url, headers=headers)\n`;
+  }
+  py += `print(response.json())`;
+  return py;
+}
 
 function App() {
   // Navigation & UI States
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoModalOpen, setDemoModalOpen] = useState(false);
+
+  // Stripe/Supabase Style Portal States
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' or 'docs'
+  const [activeDocsSection, setActiveDocsSection] = useState('overview');
+  const [apiSearchQuery, setApiSearchQuery] = useState('');
+  const [docsCodeTab, setDocsCodeTab] = useState('curl'); // 'curl', 'js', 'py', 'response'
+  const [docsCopied, setDocsCopied] = useState(false);
+
+
   
   // Interactive Dashboard States (Hero)
   const [slots, setSlots] = useState([
@@ -300,11 +759,399 @@ function App() {
     setMobileMenuOpen(false);
   };
 
+
+
   // Mock print ticket function
   const handleDownloadTicket = () => {
     playBeep(900, 80);
     alert(`Downloading virtual beta pass for ${fullName}...\nTicket ID: ${generatedTicketId}\nShow this to your society committee members for immediate verification!`);
   };
+
+  if (currentView === 'docs') {
+    const activeSectionData = API_DOCS_DATA.find(item => item.id === activeDocsSection);
+    const filteredDocsData = API_DOCS_DATA.filter(item => 
+      item.title.toLowerCase().includes(apiSearchQuery.toLowerCase()) || 
+      item.category.toLowerCase().includes(apiSearchQuery.toLowerCase()) ||
+      (item.path && item.path.toLowerCase().includes(apiSearchQuery.toLowerCase()))
+    );
+
+    return (
+      <div className="dev-portal">
+        {/* Portal Header */}
+        <nav className="portal-navbar">
+          <div className="portal-navbar-container">
+            <a href="#" className="navbar-logo" style={{ color: '#ffffff' }} onClick={(e) => { e.preventDefault(); setCurrentView('landing'); }}>
+              <QrCode size={28} strokeWidth={2.5} />
+              <span style={{ color: '#ffffff' }}>Park<span className="text-gradient">Ease</span> <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#a78bfa', background: 'rgba(124,58,237,0.2)', padding: '2px 8px', borderRadius: '9999px', marginLeft: '6px' }}>Developer API Docs</span></span>
+            </a>
+
+            <div className="portal-nav-links">
+              <a href="#" className="portal-nav-link active" onClick={(e) => e.preventDefault()}>API Reference</a>
+              <button 
+                className="btn btn-primary" 
+                style={{ padding: '6px 16px', fontSize: '13px', borderRadius: '6px', background: 'var(--grad-primary)' }}
+                onClick={() => { playBeep(450, 80); setCurrentView('landing'); }}
+              >
+                Back to Landing Page
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        {/* Portal Layout */}
+        <div className="portal-layout">
+          {/* 1. Sidebar */}
+          <div className="portal-sidebar">
+            <div className="portal-sidebar-search-wrapper">
+              <Search className="portal-sidebar-search-icon" size={16} />
+              <input 
+                type="text" 
+                className="portal-sidebar-search-input" 
+                placeholder="Search endpoints..." 
+                value={apiSearchQuery}
+                onChange={(e) => setApiSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Group by category */}
+            {Object.entries(
+              filteredDocsData.reduce((acc, item) => {
+                if (!acc[item.category]) acc[item.category] = [];
+                acc[item.category].push(item);
+                return acc;
+              }, {})
+            ).map(([category, items]) => (
+              <div key={category} className="portal-sidebar-group">
+                <div className="portal-sidebar-group-title">{category}</div>
+                <div className="portal-sidebar-items">
+                  {items.map(item => (
+                    <a 
+                      key={item.id} 
+                      className={`portal-sidebar-item ${activeDocsSection === item.id ? 'active' : ''}`}
+                      onClick={() => { playBeep(520, 50); setActiveDocsSection(item.id); }}
+                    >
+                      <span>{item.title}</span>
+                      {item.method && (
+                        <span className={`portal-sidebar-item-method ${item.method.toLowerCase()}`}>
+                          {item.method}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+            
+            {filteredDocsData.length === 0 && (
+              <div style={{ padding: '16px', fontSize: '12px', color: '#475569', textAlign: 'center' }}>
+                No endpoints found
+              </div>
+            )}
+          </div>
+
+          {/* 2. Middle Pane */}
+          <div className="portal-main-pane">
+            {activeSectionData ? (
+              <>
+                <div className="portal-endpoint-header">
+                  <div className="portal-endpoint-title-row">
+                    <h1>{activeSectionData.title}</h1>
+                    {activeSectionData.method && (
+                      <span className={`portal-endpoint-method-badge ${activeSectionData.method.toLowerCase()}`}>
+                        {activeSectionData.method}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {activeSectionData.path && (
+                    <div className="portal-endpoint-path-bar">
+                      <Terminal size={14} style={{ color: '#7c3aed' }} />
+                      <span>{activeSectionData.path}</span>
+                    </div>
+                  )}
+
+                  {activeSectionData.auth && activeSectionData.auth !== 'None' && (
+                    <span className="portal-endpoint-auth-badge">
+                      <Lock size={12} style={{ marginRight: '4px' }} />
+                      {activeSectionData.auth}
+                    </span>
+                  )}
+                </div>
+
+                <div className="portal-endpoint-desc">
+                  {activeSectionData.desc}
+                </div>
+
+                {/* Custom HTML blocks */}
+                {activeSectionData.customHtml === 'overview' && (
+                  <div className="portal-custom-overview">
+                    <div className="portal-guide-box">
+                      <div className="portal-guide-title">
+                        <Database size={18} style={{ color: '#a78bfa' }} />
+                        <span>Base Server URLs</span>
+                      </div>
+                      <table className="portal-params-table" style={{ marginTop: '12px' }}>
+                        <thead>
+                          <tr>
+                            <th>Environment</th>
+                            <th>Target URL</th>
+                            <th>Description</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><span className="portal-param-name">Local Host Server</span></td>
+                            <td><code>http://127.0.0.1:8000</code></td>
+                            <td>Running backend server natively on local developer machine.</td>
+                          </tr>
+                          <tr>
+                            <td><span className="portal-param-name">Android Emulator</span></td>
+                            <td><code>http://10.0.2.2:8000</code></td>
+                            <td>Used inside Android Virtual Devices (AVD) running on workstation.</td>
+                          </tr>
+                          <tr>
+                            <td><span className="portal-param-name">Physical Device LAN</span></td>
+                            <td><code>http://&lt;local-ip&gt;:8000</code></td>
+                            <td>For testing real devices over local Wi-Fi router.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="portal-guide-box">
+                      <div className="portal-guide-title">
+                        <BookOpen size={18} style={{ color: '#a78bfa' }} />
+                        <span>Built-in OpenAPI Specs</span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '6px' }}>
+                        The backend comes with pre-integrated OpenAPI specifications and visual playgrounds.
+                      </p>
+                      <table className="portal-params-table" style={{ marginTop: '12px' }}>
+                        <thead>
+                          <tr>
+                            <th>Method</th>
+                            <th>Endpoint Route</th>
+                            <th>Specification Output</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><span className="portal-sidebar-item-method get" style={{ fontSize: '10px', padding: '2px 6px' }}>GET</span></td>
+                            <td><code>/api/docs/</code></td>
+                            <td>Interactive Swagger UI interface mapping all models.</td>
+                          </tr>
+                          <tr>
+                            <td><span className="portal-sidebar-item-method get" style={{ fontSize: '10px', padding: '2px 6px' }}>GET</span></td>
+                            <td><code>/api/schema/</code></td>
+                            <td>Raw JSON OpenAPI Specification schema output.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {activeSectionData.customHtml === 'authentication' && (
+                  <div className="portal-custom-auth">
+                    <div className="portal-guide-box">
+                      <div className="portal-guide-title">
+                        <Lock size={18} style={{ color: '#a78bfa' }} />
+                        <span>JWT Authentication Headers</span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '6px' }}>
+                        Pass the raw JWT access token inside the request header as a bearer authentication credential. Access tokens live for 30 minutes.
+                      </p>
+                      <pre style={{ background: '#05070a', padding: '12px', borderRadius: '6px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.05)', fontFamily: 'monospace', color: '#cbd5e1', marginTop: '12px' }}>
+                        Authorization: Bearer YOUR_ACCESS_TOKEN<br />
+                        Content-Type: application/json
+                      </pre>
+                    </div>
+
+                    <div className="portal-guide-box">
+                      <div className="portal-guide-title">
+                        <Users size={18} style={{ color: '#a78bfa' }} />
+                        <span>User Role Specifications</span>
+                      </div>
+                      <table className="portal-params-table" style={{ marginTop: '12px' }}>
+                        <thead>
+                          <tr>
+                            <th>Role String</th>
+                            <th>Assigned Authority</th>
+                            <th>Standard Scope</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><span className="portal-param-name">"user"</span></td>
+                            <td>Resident / Tenant</td>
+                            <td>Manage vehicles, create bookings, settle payments, view personal passes.</td>
+                          </tr>
+                          <tr>
+                            <td><span className="portal-param-name">"society_admin"</span></td>
+                            <td>Committee Board</td>
+                            <td>Approve resident profiles, register slots, add guard access keys.</td>
+                          </tr>
+                          <tr>
+                            <td><span className="portal-param-name">"guard"</span></td>
+                            <td>Gate Security Staff</td>
+                            <td>Run entry/exit scanning tools to validate booking QR passes.</td>
+                          </tr>
+                          <tr>
+                            <td><span className="portal-param-name">"super_admin"</span></td>
+                            <td>Platform Owner</td>
+                            <td>Manage global system dashboard analytics and register new complexes.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Parameters Table */}
+                {activeSectionData.params && activeSectionData.params.length > 0 && (
+                  <div className="portal-table-section">
+                    <div className="portal-table-title">
+                      <Database size={16} />
+                      <span>Request parameters</span>
+                    </div>
+                    <table className="portal-params-table">
+                      <thead>
+                        <tr>
+                          <th>Parameter</th>
+                          <th>Type</th>
+                          <th>Requirement</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeSectionData.params.map(param => (
+                          <tr key={param.name}>
+                            <td>
+                              <span className="portal-param-name">{param.name}</span>
+                            </td>
+                            <td>
+                              <span className="portal-param-type-badge">{param.type}</span>
+                            </td>
+                            <td>
+                              {param.required ? (
+                                <span className="portal-param-required">required</span>
+                              ) : (
+                                <span className="portal-param-optional">optional</span>
+                              )}
+                            </td>
+                            <td>{param.desc}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#475569' }}>
+                <h3>Select a section or endpoint to get started.</h3>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Right Pane: Code Console */}
+          <div className="portal-code-pane">
+            {activeSectionData && (
+              <>
+                <div className="portal-code-box">
+                  <div className="portal-code-box-header">
+                    <div className="portal-code-box-tabs">
+                      <button 
+                        className={`portal-code-box-tab ${docsCodeTab === 'curl' ? 'active' : ''}`}
+                        onClick={() => setDocsCodeTab('curl')}
+                      >
+                        cURL
+                      </button>
+                      <button 
+                        className={`portal-code-box-tab ${docsCodeTab === 'js' ? 'active' : ''}`}
+                        onClick={() => setDocsCodeTab('js')}
+                      >
+                        JavaScript
+                      </button>
+                      <button 
+                        className={`portal-code-box-tab ${docsCodeTab === 'py' ? 'active' : ''}`}
+                        onClick={() => setDocsCodeTab('py')}
+                      >
+                        Python
+                      </button>
+                    </div>
+
+                    <button 
+                      className="portal-copy-btn"
+                      onClick={() => {
+                        let text = '';
+                        if (docsCodeTab === 'curl') text = generateCurl(activeSectionData).replace(/<[^>]*>/g, '');
+                        if (docsCodeTab === 'js') text = generateJS(activeSectionData).replace(/<[^>]*>/g, '');
+                        if (docsCodeTab === 'py') text = generatePython(activeSectionData).replace(/<[^>]*>/g, '');
+                        navigator.clipboard.writeText(text);
+                        setDocsCopied(true);
+                        playBeep(800, 60);
+                        setTimeout(() => setDocsCopied(false), 2000);
+                      }}
+                      title="Copy code to clipboard"
+                    >
+                      {docsCopied ? <CheckCircle2 size={16} style={{ color: '#34d399' }} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+
+                  <div className="portal-code-box-body">
+                    <pre style={{ margin: 0 }}>
+                      <code 
+                        dangerouslySetInnerHTML={{
+                          __html: docsCodeTab === 'curl' 
+                            ? generateCurl(activeSectionData) 
+                            : docsCodeTab === 'js' 
+                            ? generateJS(activeSectionData) 
+                            : generatePython(activeSectionData)
+                        }}
+                      />
+                    </pre>
+                  </div>
+                </div>
+
+                {activeSectionData.responseBody && (
+                  <div className="portal-code-box">
+                    <div className="portal-code-box-header">
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Expected JSON Response
+                      </span>
+                      <button 
+                        className="portal-copy-btn"
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(activeSectionData.responseBody, null, 2));
+                          setDocsCopied(true);
+                          playBeep(800, 60);
+                          setTimeout(() => setDocsCopied(false), 2000);
+                        }}
+                        title="Copy response body"
+                      >
+                        {docsCopied ? <CheckCircle2 size={16} style={{ color: '#34d399' }} /> : <Copy size={16} />}
+                      </button>
+                    </div>
+
+                    <div className="portal-code-box-body">
+                      <pre style={{ margin: 0 }}>
+                        <code 
+                          dangerouslySetInnerHTML={{
+                            __html: highlightJson(activeSectionData.responseBody)
+                          }}
+                        />
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -333,6 +1180,14 @@ function App() {
           </ul>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              className="btn btn-outline-glow" 
+              style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '8px', border: '1px solid var(--color-slate-300)', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ffffff', color: '#1e293b' }}
+              onClick={() => { playBeep(520, 80); setCurrentView('docs'); }}
+            >
+              <Code size={14} />
+              <span>API Docs</span>
+            </button>
             <button 
               className="btn btn-primary" 
               style={{ padding: '8px 20px', fontSize: '14px', borderRadius: '8px' }}
@@ -372,6 +1227,10 @@ function App() {
             <a href="#features" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a>
             <a href="#how-it-works" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('how-it-works'); }}>How It Works</a>
             <a href="#security" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('security'); }}>Security</a>
+            <a href="#api-docs" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); setCurrentView('docs'); playBeep(520, 80); }}>
+              <Code size={16} />
+              <span>API Docs</span>
+            </a>
           </div>
         )}
       </nav>
@@ -1004,6 +1863,8 @@ function App() {
         </div>
       </section>
 
+
+
       {/* ====================================================
          7. BETA ACCESS REGISTRATION FORM
          ==================================================== */}
@@ -1367,7 +2228,6 @@ function App() {
               <h4>Resources</h4>
               <ul className="footer-links">
                 <li><a href="#" onClick={(e) => { e.preventDefault(); setDemoModalOpen(true); }}>Watch Walkthrough</a></li>
-                <li><a href="#" onClick={(e) => e.preventDefault()}>API Documentation</a></li>
                 <li><a href="#" onClick={(e) => e.preventDefault()}>Integrations</a></li>
                 <li><a href="#" onClick={(e) => e.preventDefault()}>Beta Release Log</a></li>
               </ul>
