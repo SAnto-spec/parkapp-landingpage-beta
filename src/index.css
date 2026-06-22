@@ -459,7 +459,7 @@ h1, h2, h3, h4 {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
   .hero-actions {
     flex-direction: column;
   }
@@ -3290,5 +3290,256 @@ h1, h2, h3, h4 {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ====================================================
+   RESPONSIVENESS AND MOBILE IMPROVEMENTS
+   ==================================================== */
+
+/* Header Mobile Hiding actions */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 991px) {
+  .navbar-actions .btn {
+    display: none !important; /* Hide desktop CTA buttons in crowded header */
+  }
+}
+
+/* Mobile Drawer Overlay styles */
+.mobile-drawer {
+  position: absolute;
+  top: 80px;
+  left: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: slide-in-top-draw 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (min-width: 992px) {
+  .mobile-drawer {
+    display: none !important;
+  }
+}
+
+.mobile-drawer a {
+  text-decoration: none;
+  color: var(--color-slate-800);
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+  transition: color 0.2s ease;
+}
+
+.mobile-drawer a:hover {
+  color: #4f46e5;
+}
+
+@keyframes slide-in-top-draw {
+  0% { transform: translateY(-10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Hero Stats scaling */
+@media (max-width: 576px) {
+  .hero-trust-metrics {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 24px;
+  }
+  .trust-metric-item h4 {
+    font-size: 22px;
+  }
+}
+
+/* Mockup Admin dashboard tablet/mobile sizing */
+.dashboard-mockup {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.dashboard-body,
+.dashboard-main,
+.dashboard-slots-panel,
+.slots-grid-mockup {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dashboard-logs-panel {
+    display: none !important;
+  }
+  .dashboard-sidebar {
+    display: none !important;
+  }
+  .dashboard-main {
+    padding: 12px !important;
+  }
+  .dashboard-stats {
+    gap: 6px !important;
+  }
+  .stat-item {
+    padding: 6px 4px !important;
+  }
+  .stat-item-label {
+    font-size: 9px !important;
+  }
+  .stat-item-value {
+    font-size: 14px !important;
+  }
+  .slots-grid-mockup {
+    gap: 6px !important;
+  }
+  .slot-node {
+    padding: 8px 4px !important;
+  }
+  .slot-node-type {
+    display: none !important; /* Hide 'Resident'/'Visitor' labels inside nodes on mobile */
+  }
+}
+
+/* Developer Portal Header Responsive text & badge toggles */
+.portal-header-badge {
+  font-size: 12px;
+  font-weight: bold;
+  color: #a78bfa;
+  background: rgba(124, 58, 237, 0.2);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  margin-left: 6px;
+  display: inline-block;
+}
+
+.btn-text-desktop {
+  display: inline;
+}
+
+.btn-text-mobile {
+  display: none;
+}
+
+@media (max-width: 576px) {
+  .portal-header-badge {
+    display: none !important; /* Hide developer badge on small mobile screens */
+  }
+  .btn-text-desktop {
+    display: none !important;
+  }
+  .btn-text-mobile {
+    display: inline !important;
+  }
+}
+
+/* API Developer portal mobile Selector */
+.portal-mobile-selector {
+  display: none;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.portal-mobile-selector label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.portal-mobile-selector select {
+  width: 100%;
+  height: 40px;
+  background-color: #0b0f19;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+}
+
+.portal-mobile-selector select:focus {
+  border-color: #7c3aed;
+}
+
+@media (max-width: 991px) {
+  .portal-mobile-selector {
+    display: block !important;
+  }
+}
+
+/* Developer Portal Tablet and Mobile layouts */
+@media (max-width: 1200px) {
+  .portal-layout {
+    grid-template-columns: 260px 1fr !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .portal-sidebar {
+    height: auto !important;
+    position: sticky !important;
+    top: 70px !important;
+    max-height: calc(100vh - 70px) !important;
+  }
+  .portal-main-pane {
+    height: auto !important;
+  }
+  .portal-code-pane {
+    grid-column: span 2 !important;
+    height: auto !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: #080b11 !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .portal-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .portal-sidebar {
+    display: none !important;
+  }
+  .portal-code-pane {
+    grid-column: span 1 !important;
+  }
+}
+
+/* Responsive Tables to prevent horizontal overflow */
+.portal-table-section,
+.portal-guide-box {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.portal-params-table {
+  width: 100% !important;
+  min-width: 500px !important; /* Force a minimum width to prevent columns from wrapping and breaking */
+  border-collapse: collapse;
 }
 

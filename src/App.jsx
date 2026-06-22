@@ -373,7 +373,7 @@ function highlightJson(obj) {
       } else if (/null/.test(match)) {
         cls = 'json-null';
       }
-      return `<span class="\${cls}">\${match}</span>`;
+      return `<span class="${cls}">${match}</span>`;
     }
   );
 }
@@ -381,8 +381,8 @@ function highlightJson(obj) {
 // cURL dynamic code snippet generator
 function generateCurl(endpoint) {
   const method = endpoint.method || 'GET';
-  const url = `https://api.parkease.com\${endpoint.path}`;
-  let curl = `<span class="curl-method">curl</span> -X <span class="curl-method">\${method}</span> <span class="curl-url">"\${url}"</span> \\\n`;
+  const url = `https://api.parkease.com${endpoint.path || ''}`;
+  let curl = `<span class="curl-method">curl</span> -X <span class="curl-method">${method}</span> <span class="curl-url">"${url}"</span> \\\n`;
   
   if (endpoint.auth === 'Bearer JWT' || endpoint.auth === 'Bearer JWT (Guard)') {
     curl += `  -H <span class="curl-header">"Authorization: Bearer YOUR_ACCESS_TOKEN"</span> \\\n`;
@@ -390,7 +390,7 @@ function generateCurl(endpoint) {
   
   if (endpoint.requestHeaders) {
     Object.entries(endpoint.requestHeaders).forEach(([key, val]) => {
-      curl += `  -H <span class="curl-header">"\${key}: \${val}"</span> \\\n`;
+      curl += `  -H <span class="curl-header">"${key}: ${val}"</span> \\\n`;
     });
   }
   
@@ -405,9 +405,9 @@ function generateCurl(endpoint) {
 // JavaScript Fetch dynamic code snippet generator
 function generateJS(endpoint) {
   const method = endpoint.method || 'GET';
-  const url = `https://api.parkease.com\${endpoint.path}`;
-  let jsCode = `<span class="json-key">const</span> response = <span class="json-key">await</span> fetch(<span class="json-string">"\${url}"</span>, {\n`;
-  jsCode += `  method: <span class="json-string">"\${method}"</span>,\n`;
+  const url = `https://api.parkease.com${endpoint.path || ''}`;
+  let jsCode = `<span class="json-key">const</span> response = <span class="json-key">await</span> fetch(<span class="json-string">"${url}"</span>, {\n`;
+  jsCode += `  method: <span class="json-string">"${method}"</span>,\n`;
   
   jsCode += `  headers: {\n`;
   if (endpoint.auth === 'Bearer JWT' || endpoint.auth === 'Bearer JWT (Guard)') {
@@ -415,13 +415,13 @@ function generateJS(endpoint) {
   }
   if (endpoint.requestHeaders) {
     Object.entries(endpoint.requestHeaders).forEach(([key, val]) => {
-      jsCode += `    <span class="json-string">"\${key}"</span>: <span class="json-string">"\${val}"</span>,\n`;
+      jsCode += `    <span class="json-string">"${key}"</span>: <span class="json-string">"${val}"</span>,\n`;
     });
   }
   jsCode += `  },\n`;
   
   if (endpoint.requestBody && Object.keys(endpoint.requestBody).length > 0) {
-    jsCode += `  body: JSON.stringify(\${JSON.stringify(endpoint.requestBody, null, 2).replace(/\\n/g, '\\n  ')})\n`;
+    jsCode += `  body: JSON.stringify(${JSON.stringify(endpoint.requestBody, null, 2).replace(/\n/g, '\n  ')})\n`;
   }
   jsCode += `});\n`;
   jsCode += `<span class="json-key">const</span> data = <span class="json-key">await</span> response.json();`;
@@ -431,25 +431,25 @@ function generateJS(endpoint) {
 // Python requests dynamic code snippet generator
 function generatePython(endpoint) {
   const method = (endpoint.method || 'GET').toLowerCase();
-  const url = `https://api.parkease.com\${endpoint.path}`;
+  const url = `https://api.parkease.com${endpoint.path || ''}`;
   let py = `<span class="json-key">import</span> requests\n\n`;
-  py += `url = <span class="json-string">"\${url}"</span>\n`;
+  py += `url = <span class="json-string">"${url}"</span>\n`;
   py += `headers = {\n`;
   if (endpoint.auth === 'Bearer JWT' || endpoint.auth === 'Bearer JWT (Guard)') {
     py += `    <span class="json-string">"Authorization"</span>: <span class="json-string">"Bearer YOUR_ACCESS_TOKEN"</span>,\n`;
   }
   if (endpoint.requestHeaders) {
     Object.entries(endpoint.requestHeaders).forEach(([key, val]) => {
-      py += `    <span class="json-string">"\${key}"</span>: <span class="json-string">"\${val}"</span>,\n`;
+      py += `    <span class="json-string">"${key}"</span>: <span class="json-string">"${val}"</span>,\n`;
     });
   }
   py += `}\n`;
   
   if (endpoint.requestBody && Object.keys(endpoint.requestBody).length > 0) {
-    py += `data = \${JSON.stringify(endpoint.requestBody, null, 4).replace(/true/g, 'True').replace(/false/g, 'False').replace(/null/g, 'None')}\n`;
-    py += `response = requests.\${method}(url, headers=headers, json=data)\n`;
+    py += `data = ${JSON.stringify(endpoint.requestBody, null, 4).replace(/true/g, 'True').replace(/false/g, 'False').replace(/null/g, 'None')}\n`;
+    py += `response = requests.${method}(url, headers=headers, json=data)\n`;
   } else {
-    py += `response = requests.\${method}(url, headers=headers)\n`;
+    py += `response = requests.${method}(url, headers=headers)\n`;
   }
   py += `print(response.json())`;
   return py;
@@ -782,17 +782,21 @@ function App() {
           <div className="portal-navbar-container">
             <a href="#" className="navbar-logo" style={{ color: '#ffffff' }} onClick={(e) => { e.preventDefault(); setCurrentView('landing'); }}>
               <QrCode size={28} strokeWidth={2.5} />
-              <span style={{ color: '#ffffff' }}>Park<span className="text-gradient">Ease</span> <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#a78bfa', background: 'rgba(124,58,237,0.2)', padding: '2px 8px', borderRadius: '9999px', marginLeft: '6px' }}>Developer API Docs</span></span>
+              <span style={{ color: '#ffffff' }}>
+                Park<span className="text-gradient">Ease</span>
+                <span className="portal-header-badge">Developer API Docs</span>
+              </span>
             </a>
 
             <div className="portal-nav-links">
               <a href="#" className="portal-nav-link active" onClick={(e) => e.preventDefault()}>API Reference</a>
               <button 
-                className="btn btn-primary" 
+                className="btn btn-primary portal-back-btn" 
                 style={{ padding: '6px 16px', fontSize: '13px', borderRadius: '6px', background: 'var(--grad-primary)' }}
                 onClick={() => { playBeep(450, 80); setCurrentView('landing'); }}
               >
-                Back to Landing Page
+                <span className="btn-text-desktop">Back to Landing Page</span>
+                <span className="btn-text-mobile">Back</span>
               </button>
             </div>
           </div>
@@ -851,6 +855,21 @@ function App() {
 
           {/* 2. Middle Pane */}
           <div className="portal-main-pane">
+            <div className="portal-mobile-selector">
+              <label htmlFor="mobile-endpoint-select">Select API Reference Endpoint:</label>
+              <select
+                id="mobile-endpoint-select"
+                value={activeDocsSection}
+                onChange={(e) => { playBeep(520, 50); setActiveDocsSection(e.target.value); }}
+              >
+                {API_DOCS_DATA.map(item => (
+                  <option key={item.id} value={item.id}>
+                    {item.method ? `[${item.method}] ` : ''}{item.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {activeSectionData ? (
               <>
                 <div className="portal-endpoint-header">
@@ -1179,7 +1198,7 @@ function App() {
             <li><a href="#security" onClick={(e) => { e.preventDefault(); scrollToSection('security'); }}>Security</a></li>
           </ul>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="navbar-actions">
             <button 
               className="btn btn-outline-glow" 
               style={{ padding: '8px 16px', fontSize: '14px', borderRadius: '8px', border: '1px solid var(--color-slate-300)', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ffffff', color: '#1e293b' }}
@@ -1207,30 +1226,22 @@ function App() {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div style={{
-            position: 'absolute',
-            top: '80px',
-            left: '24px',
-            right: '24px',
-            background: 'rgba(255, 255, 255, 0.96)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(15, 23, 42, 0.08)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-            zIndex: 999,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <a href="#problems" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('problems'); }}>Problems</a>
-            <a href="#features" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a>
-            <a href="#how-it-works" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('how-it-works'); }}>How It Works</a>
-            <a href="#security" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600' }} onClick={(e) => { e.preventDefault(); scrollToSection('security'); }}>Security</a>
-            <a href="#api-docs" style={{ textDecoration: 'none', color: '#1e293b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); setCurrentView('docs'); playBeep(520, 80); }}>
+          <div className="mobile-drawer">
+            <a href="#problems" onClick={(e) => { e.preventDefault(); scrollToSection('problems'); }}>Problems</a>
+            <a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a>
+            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); scrollToSection('how-it-works'); }}>How It Works</a>
+            <a href="#security" onClick={(e) => { e.preventDefault(); scrollToSection('security'); }}>Security</a>
+            <a href="#api-docs" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); setCurrentView('docs'); playBeep(520, 80); }}>
               <Code size={16} />
               <span>API Docs</span>
             </a>
+            <button 
+              className="btn btn-primary" 
+              style={{ width: '100%', marginTop: '8px', padding: '10px' }}
+              onClick={() => { scrollToSection('beta-form'); setMobileMenuOpen(false); }}
+            >
+              Get Beta Access
+            </button>
           </div>
         )}
       </nav>
