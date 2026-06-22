@@ -74,6 +74,36 @@ const API_DOCS_DATA = [
     }
   },
   {
+    id: 'auth-guard-register',
+    title: 'Register Guard Request',
+    category: 'Authentication',
+    method: 'POST',
+    path: '/api/v1/auth/guard/register/',
+    auth: 'Public',
+    desc: 'Creates a guard account in pending approval status linked to a specific housing society.',
+    params: [
+      { name: 'full_name', type: 'string', required: true, desc: 'Full legal name of the gate guard' },
+      { name: 'email', type: 'string', required: true, desc: 'Unique email address' },
+      { name: 'phone', type: 'string', required: true, desc: '10-digit mobile number' },
+      { name: 'password', type: 'string', required: true, desc: 'Account password' },
+      { name: 'society_id', type: 'string', required: true, desc: 'UUID of the target society' }
+    ],
+    requestHeaders: { 'Content-Type': 'application/json' },
+    requestBody: {
+      full_name: "Gate Guard",
+      email: "guard@example.com",
+      phone: "9876543222",
+      password: "Password@123",
+      society_id: "soc_5e4f3g2h"
+    },
+    responseBody: {
+      id: "grd_12345678",
+      full_name: "Gate Guard",
+      email: "guard@example.com",
+      approval_status: "pending"
+    }
+  },
+  {
     id: 'auth-login',
     title: 'User Login',
     category: 'Authentication',
@@ -92,6 +122,25 @@ const API_DOCS_DATA = [
     },
     responseBody: {
       refresh: "eyJhbGciOiJIUzI1NiIsInR5...",
+      access: "eyJhbGciOiJIUzI1NiIsInR5..."
+    }
+  },
+  {
+    id: 'auth-token-refresh',
+    title: 'Refresh Token',
+    category: 'Authentication',
+    method: 'POST',
+    path: '/api/v1/auth/token/refresh/',
+    auth: 'Public',
+    desc: 'Submit a valid JWT refresh token to receive a fresh access token without requiring re-authentication.',
+    params: [
+      { name: 'refresh', type: 'string', required: true, desc: 'JWT refresh token' }
+    ],
+    requestHeaders: { 'Content-Type': 'application/json' },
+    requestBody: {
+      refresh: "eyJhbGciOiJIUzI1NiIsInR5..."
+    },
+    responseBody: {
       access: "eyJhbGciOiJIUzI1NiIsInR5..."
     }
   },
@@ -125,6 +174,25 @@ const API_DOCS_DATA = [
     }
   },
   {
+    id: 'auth-vehicles-list',
+    title: 'List Vehicles',
+    category: 'Authentication',
+    method: 'GET',
+    path: '/api/v1/auth/vehicles/',
+    auth: 'Bearer JWT',
+    desc: 'Lists all vehicles associated with the authenticated user profile.',
+    params: [],
+    responseBody: [
+      {
+        id: "veh_1a2b3c4d",
+        vehicle_type: "car",
+        registration_no: "MH01AB1234",
+        make_model: "Hyundai i20",
+        is_active: true
+      }
+    ]
+  },
+  {
     id: 'vehicles',
     title: 'Add User Vehicle',
     category: 'Authentication',
@@ -148,6 +216,197 @@ const API_DOCS_DATA = [
       registration_no: "MH01AB1234",
       make_model: "Hyundai i20",
       is_active: true
+    }
+  },
+  {
+    id: 'auth-vehicles-delete',
+    title: 'Delete User Vehicle',
+    category: 'Authentication',
+    method: 'DELETE',
+    path: '/api/v1/auth/vehicles/{vehicle_id}/',
+    auth: 'Bearer JWT',
+    desc: 'Performs a soft delete on the specified vehicle, deactivating it from active parking operations.',
+    params: [
+      { name: 'vehicle_id', type: 'string', required: true, desc: 'UUID of the target vehicle' }
+    ],
+    responseBody: {
+      detail: "Vehicle marked inactive successfully"
+    }
+  },
+  {
+    id: 'auth-notifications',
+    title: 'List Notifications',
+    category: 'Authentication',
+    method: 'GET',
+    path: '/api/v1/auth/notifications/',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves notification alerts regarding society join decision status, booking approvals, and penalties.',
+    params: [],
+    responseBody: [
+      {
+        id: "not_1a2b3c4d",
+        title: "Join Request Approved",
+        message: "Your membership request for Green Heights has been approved.",
+        is_read: false,
+        created_at: "2026-05-18T12:00:00Z"
+      }
+    ]
+  },
+  {
+    id: 'auth-notifications-read',
+    title: 'Mark Notification Read',
+    category: 'Authentication',
+    method: 'PATCH',
+    path: '/api/v1/auth/notifications/{notification_id}/read/',
+    auth: 'Bearer JWT',
+    desc: 'Marks the specific notification as read in the user alert panel.',
+    params: [
+      { name: 'notification_id', type: 'string', required: true, desc: 'UUID of the notification' }
+    ],
+    responseBody: {
+      id: "not_1a2b3c4d",
+      is_read: true
+    }
+  },
+  {
+    id: 'auth-guards-list',
+    title: 'List Society Guards',
+    category: 'Authentication',
+    method: 'GET',
+    path: '/api/v1/auth/guards/',
+    auth: 'Society Admin',
+    desc: 'Lists the active guards associated with the admin\'s society, including scanning permissions.',
+    params: [],
+    responseBody: [
+      {
+        id: "grd_1a2b3c4d",
+        full_name: "Gate Guard One",
+        email: "guard1@example.com",
+        can_scan_entry: true,
+        can_scan_exit: true
+      }
+    ]
+  },
+  {
+    id: 'auth-guards-create',
+    title: 'Create Guard Account',
+    category: 'Authentication',
+    method: 'POST',
+    path: '/api/v1/auth/guards/',
+    auth: 'Society Admin',
+    desc: 'Registers a new guard account directly, issuing one-time temporary login credentials.',
+    params: [
+      { name: 'full_name', type: 'string', required: true, desc: 'Full legal name' },
+      { name: 'phone', type: 'string', required: true, desc: '10-digit mobile number' },
+      { name: 'email', type: 'string', required: false, desc: 'Optional login email' },
+      { name: 'can_scan_entry', type: 'boolean', required: false, desc: 'Allowed to scan entries' },
+      { name: 'can_scan_exit', type: 'boolean', required: false, desc: 'Allowed to scan exits' }
+    ],
+    requestBody: {
+      full_name: "Gate Guard",
+      phone: "9876543222",
+      email: "guard@example.com",
+      can_scan_entry: true,
+      can_scan_exit: true
+    },
+    responseBody: {
+      guard: {
+        id: "grd_1a2b3c4d",
+        email: "guard@example.com",
+        full_name: "Gate Guard",
+        can_scan_entry: true,
+        can_scan_exit: true
+      },
+      credentials: {
+        email: "guard@example.com",
+        temporary_password: "generated-password"
+      }
+    }
+  },
+  {
+    id: 'auth-guards-update',
+    title: 'Update Guard Permissions',
+    category: 'Authentication',
+    method: 'PATCH',
+    path: '/api/v1/auth/guards/{guard_id}/',
+    auth: 'Society Admin',
+    desc: 'Updates guard QR scanning permissions. Note that at least one scan permission must remain enabled.',
+    params: [
+      { name: 'guard_id', type: 'string', required: true, desc: 'UUID of the guard' },
+      { name: 'can_scan_entry', type: 'boolean', required: false, desc: 'Toggle entry scanning' },
+      { name: 'can_scan_exit', type: 'boolean', required: false, desc: 'Toggle exit scanning' }
+    ],
+    requestBody: {
+      can_scan_entry: true,
+      can_scan_exit: false
+    },
+    responseBody: {
+      id: "grd_1a2b3c4d",
+      full_name: "Gate Guard",
+      can_scan_entry: true,
+      can_scan_exit: false
+    }
+  },
+  {
+    id: 'societies-list-create',
+    title: 'List or Create Societies',
+    category: 'Societies & Places',
+    method: 'GET',
+    path: '/api/v1/societies/',
+    auth: 'Bearer JWT',
+    desc: 'Lists all societies on the network. Can also receive POST requests from platform super-admins to deploy new complex servers.',
+    params: [],
+    responseBody: [
+      {
+        id: "soc_5e4f3g2h",
+        name: "Green Heights",
+        address: "MG Road",
+        city: "Mumbai",
+        state: "Maharashtra",
+        pincode: "400001"
+      }
+    ]
+  },
+  {
+    id: 'societies-create-admin',
+    title: 'Create Society (Super)',
+    category: 'Societies & Places',
+    method: 'POST',
+    path: '/api/v1/societies/',
+    auth: 'Super Admin',
+    desc: 'Registers a new society profile along with credentials for its primary society admin manager.',
+    params: [
+      { name: 'name', type: 'string', required: true, desc: 'Society name' },
+      { name: 'address', type: 'string', required: true, desc: 'Street address' },
+      { name: 'city', type: 'string', required: true, desc: 'Target city' },
+      { name: 'state', type: 'string', required: true, desc: 'Target state' },
+      { name: 'pincode', type: 'string', required: true, desc: '6-digit pin code' },
+      { name: 'latitude', type: 'string', required: true, desc: 'Decimal latitude coordinate' },
+      { name: 'longitude', type: 'string', required: true, desc: 'Decimal longitude coordinate' },
+      { name: 'admin_full_name', type: 'string', required: true, desc: 'Admin manager name' },
+      { name: 'admin_email', type: 'string', required: true, desc: 'Admin email login' },
+      { name: 'admin_password', type: 'string', required: true, desc: 'Admin account password' }
+    ],
+    requestBody: {
+      name: "Green Heights",
+      address: "MG Road",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400001",
+      latitude: "19.076000",
+      longitude: "72.877700",
+      contact_email: "office@greenheights.example",
+      contact_phone: "9876543211",
+      admin_full_name: "Society Admin",
+      admin_email: "admin@example.com",
+      admin_phone: "9876543211",
+      admin_password: "Password@123"
+    },
+    responseBody: {
+      id: "soc_5e4f3g2h",
+      name: "Green Heights",
+      admin_user: "admin@example.com",
+      status: "created"
     }
   },
   {
@@ -177,6 +436,84 @@ const API_DOCS_DATA = [
         available_slots: 34
       }
     ]
+  },
+  {
+    id: 'societies-detail',
+    title: 'Society Detail & Profile',
+    category: 'Societies & Places',
+    method: 'GET',
+    path: '/api/v1/societies/{society_id}//',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves profile settings of the specified society. Platform super-admins can PATCH this endpoint to update settings.',
+    params: [
+      { name: 'society_id', type: 'string', required: true, desc: 'UUID of the society' }
+    ],
+    responseBody: {
+      id: "soc_5e4f3g2h",
+      name: "Green Heights",
+      address: "MG Road",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400001",
+      latitude: "19.076000",
+      longitude: "72.877700"
+    }
+  },
+  {
+    id: 'societies-geocode',
+    title: 'Geocode Search',
+    category: 'Societies & Places',
+    method: 'GET',
+    path: '/api/v1/societies/geocode/',
+    auth: 'Bearer JWT',
+    desc: 'Resolves raw text query addresses to coordinates using MapTiler (fallback to Nominatim).',
+    params: [
+      { name: 'q', type: 'string', required: true, desc: 'Address text query' }
+    ],
+    responseBody: [
+      {
+        display_name: "Mumbai, Maharashtra, India",
+        latitude: 19.0760,
+        longitude: 72.8777
+      }
+    ]
+  },
+  {
+    id: 'societies-autocomplete',
+    title: 'Destination Autocomplete',
+    category: 'Societies & Places',
+    method: 'GET',
+    path: '/api/v1/societies/destinations/autocomplete/',
+    auth: 'Bearer JWT',
+    desc: 'Provides instant location autocomplete suggestions as the user types a search query.',
+    params: [
+      { name: 'q', type: 'string', required: true, desc: 'Search prefix query' },
+      { name: 'limit', type: 'number', required: false, desc: 'Maximum results (default: 5)' }
+    ],
+    responseBody: [
+      {
+        place_id: "pl_bandra_12",
+        display_name: "Bandra West, Mumbai",
+        latitude: 19.0600,
+        longitude: 72.8365
+      }
+    ]
+  },
+  {
+    id: 'societies-reverse-geocode',
+    title: 'Reverse Geocode',
+    category: 'Societies & Places',
+    method: 'GET',
+    path: '/api/v1/societies/destinations/reverse-geocode/',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves matching street address descriptions for specific coordinate pairs.',
+    params: [
+      { name: 'latitude', type: 'number', required: true, desc: 'Decimal latitude coordinate' },
+      { name: 'longitude', type: 'number', required: true, desc: 'Decimal longitude coordinate' }
+    ],
+    responseBody: {
+      address: "Bandra West, Mumbai, Maharashtra"
+    }
   },
   {
     id: 'societies-search',
@@ -245,6 +582,208 @@ const API_DOCS_DATA = [
     ]
   },
   {
+    id: 'slots-create',
+    title: 'Create Parking Slot',
+    category: 'Parking Slots',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/slots/',
+    auth: 'Bearer JWT',
+    desc: 'Creates a parking slot. Society admins create approved society-owned slots immediately. Residents create resident-owned slots which remain blocked pending admin verification decisions.',
+    params: [
+      { name: 'slot_number', type: 'string', required: true, desc: 'Identifier (e.g. A-101)' },
+      { name: 'floor', type: 'string', required: true, desc: 'Floor index number' },
+      { name: 'slot_type', type: 'string', required: true, desc: 'Must be "car" or "bike"' },
+      { name: 'hourly_rate', type: 'string', required: true, desc: 'Decimal parking rate' },
+      { name: 'available_from_write', type: 'string', required: false, desc: 'Availability start (HH:MM:SS)' },
+      { name: 'available_to_write', type: 'string', required: false, desc: 'Availability end (HH:MM:SS)' }
+    ],
+    requestBody: {
+      slot_number: "A-101",
+      floor: "1",
+      slot_type: "car",
+      hourly_rate: "50.00",
+      available_from_write: "08:00:00",
+      available_to_write: "22:00:00"
+    },
+    responseBody: {
+      id: "slt_4a3b2c1d",
+      slot_number: "A-101",
+      floor: "1",
+      slot_type: "car",
+      hourly_rate: "50.00",
+      state: "blocked",
+      approval_status: "pending"
+    }
+  },
+  {
+    id: 'slots-detail-update',
+    title: 'Get/Update Slot Details',
+    category: 'Parking Slots',
+    method: 'PATCH',
+    path: '/api/v1/societies/{society_id}/slots/{slot_id}/',
+    auth: 'Society Admin',
+    desc: 'Retrieves or partially updates parameters of the specified parking slot.',
+    params: [
+      { name: 'slot_id', type: 'string', required: true, desc: 'UUID of the target slot' }
+    ],
+    requestBody: {
+      hourly_rate: "60.00"
+    },
+    responseBody: {
+      id: "slt_4a3b2c1d",
+      slot_number: "A-101",
+      hourly_rate: "60.00",
+      state: "available",
+      approval_status: "approved"
+    }
+  },
+  {
+    id: 'slots-decision',
+    title: 'Approve/Reject Slot',
+    category: 'Parking Slots',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/slots/{slot_id}/decision/',
+    auth: 'Society Admin',
+    desc: 'Society admin workflow to approve or reject slot applications submitted by society residents.',
+    params: [
+      { name: 'action', type: 'string', required: true, desc: 'Must be "approve" or "reject"' },
+      { name: 'notes', type: 'string', required: false, desc: 'Administrative review notes' }
+    ],
+    requestBody: {
+      action: "approve",
+      notes: "Documents verified"
+    },
+    responseBody: {
+      id: "slt_4a3b2c1d",
+      approval_status: "approved",
+      state: "available"
+    }
+  },
+  {
+    id: 'slots-block',
+    title: 'Block Parking Slot',
+    category: 'Parking Slots',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/slots/{slot_id}/block/',
+    auth: 'Society Admin',
+    desc: 'Administrative override to block a slot from visitor bookings. Slot must currently be available.',
+    params: [
+      { name: 'slot_id', type: 'string', required: true, desc: 'UUID of the slot' }
+    ],
+    responseBody: {
+      id: "slt_4a3b2c1d",
+      state: "blocked"
+    }
+  },
+  {
+    id: 'slots-unblock',
+    title: 'Unblock Parking Slot',
+    category: 'Parking Slots',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/slots/{slot_id}/unblock/',
+    auth: 'Society Admin',
+    desc: 'Reverts a blocked slot back to available state for general lease bookings.',
+    params: [
+      { name: 'slot_id', type: 'string', required: true, desc: 'UUID of the slot' }
+    ],
+    responseBody: {
+      id: "slt_4a3b2c1d",
+      state: "available"
+    }
+  },
+  {
+    id: 'slots-toggle-active',
+    title: 'Toggle Active Status',
+    category: 'Parking Slots',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/slots/{slot_id}/toggle-active/',
+    auth: 'Bearer JWT (Owner)',
+    desc: 'Allows a resident slot owner to temporarily active or deactivate booking availability. Fails if occupied or schedule contains upcoming bookings.',
+    params: [
+      { name: 'is_active', type: 'boolean', required: true, desc: 'Target active flag' }
+    ],
+    requestBody: {
+      is_active: false
+    },
+    responseBody: {
+      id: "slt_4a3b2c1d",
+      is_active: false
+    }
+  },
+  {
+    id: 'slots-availability',
+    title: 'Set Availability Windows',
+    category: 'Parking Slots',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/slots/{slot_id}/availability/',
+    auth: 'Society Admin',
+    desc: 'Creates availability calendars defining specific hourly ranges for different days of the week.',
+    params: [
+      { name: 'day_of_week', type: 'number', required: true, desc: '0 (Mon) to 6 (Sun)' },
+      { name: 'start_time', type: 'string', required: true, desc: 'Format HH:MM:SS' },
+      { name: 'end_time', type: 'string', required: true, desc: 'Format HH:MM:SS' },
+      { name: 'is_active', type: 'boolean', required: true, desc: 'Active toggle state' }
+    ],
+    requestBody: {
+      day_of_week: 0,
+      start_time: "08:00:00",
+      end_time: "22:00:00",
+      is_active: true
+    },
+    responseBody: {
+      id: "av_99887766",
+      day_of_week: 0,
+      start_time: "08:00:00",
+      end_time: "22:00:00",
+      is_active: true
+    }
+  },
+  {
+    id: 'membership-requests',
+    title: 'List Join Requests',
+    category: 'Society Membership',
+    method: 'GET',
+    path: '/api/v1/societies/{society_id}/join-requests/',
+    auth: 'Society Admin',
+    desc: 'Lists pending tenant and resident verification applications requesting access to join this complex.',
+    params: [
+      { name: 'status', type: 'string', required: false, desc: 'Filter (e.g. "pending")' }
+    ],
+    responseBody: [
+      {
+        id: "req_2a3b4c5d",
+        user: {
+          id: "usr_9a8b7c6d",
+          full_name: "Example User",
+          email: "user@example.com"
+        },
+        flat_number: "A-401",
+        status: "pending"
+      }
+    ]
+  },
+  {
+    id: 'membership-decision',
+    title: 'Approve/Reject Tenant',
+    category: 'Society Membership',
+    method: 'POST',
+    path: '/api/v1/societies/{society_id}/join-requests/{join_request_id}/decision/',
+    auth: 'Society Admin',
+    desc: 'Approves or rejects a resident\'s access application. Approving connects the resident user profile to the society server.',
+    params: [
+      { name: 'action', type: 'string', required: true, desc: 'Must be "approve" or "reject"' },
+      { name: 'notes', type: 'string', required: false, desc: 'Optional review comments' }
+    ],
+    requestBody: {
+      action: "approve",
+      notes: "Resident verified"
+    },
+    responseBody: {
+      id: "req_2a3b4c5d",
+      status: "approved"
+    }
+  },
+  {
     id: 'bookings-create',
     title: 'Create Booking Lock',
     category: 'Bookings & QR',
@@ -271,6 +810,144 @@ const API_DOCS_DATA = [
       status: "pending_payment",
       payment_status: "created",
       lock_expires_at: "2026-05-18T13:15:00Z"
+    }
+  },
+  {
+    id: 'bookings-list',
+    title: 'List Bookings',
+    category: 'Bookings & QR',
+    method: 'GET',
+    path: '/api/v1/bookings/list/',
+    auth: 'Bearer JWT',
+    desc: 'Lists booking tickets. Users see their own tickets; society admins and guards view all schedules active in their society.',
+    params: [
+      { name: 'status', type: 'string', required: false, desc: 'Filter status (e.g. "confirmed", "active")' }
+    ],
+    responseBody: [
+      {
+        id: "bkg_0z9y8x7w",
+        booking_number: "BK-20260518-ABC123",
+        amount: "100.00",
+        status: "confirmed",
+        payment_status: "captured"
+      }
+    ]
+  },
+  {
+    id: 'bookings-detail',
+    title: 'Booking Detail',
+    category: 'Bookings & QR',
+    method: 'GET',
+    path: '/api/v1/bookings/{booking_id}/',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves details for a specific booking. If the booking status is pending_payment, calling this triggers a checkout sync to verify payment status automatically.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of the booking' }
+    ],
+    responseBody: {
+      id: "bkg_0z9y8x7w",
+      booking_number: "BK-20260518-ABC123",
+      amount: "100.00",
+      status: "confirmed",
+      payment_status: "captured"
+    }
+  },
+  {
+    id: 'bookings-cancel',
+    title: 'Cancel Booking',
+    category: 'Bookings & QR',
+    method: 'POST',
+    path: '/api/v1/bookings/{booking_id}/cancel/',
+    auth: 'Bearer JWT (Owner)',
+    desc: 'Cancels a confirmed or pending booking, releasing any active locks/reservations on the slot.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of the booking' }
+    ],
+    responseBody: {
+      id: "bkg_0z9y8x7w",
+      status: "cancelled",
+      detail: "Booking successfully cancelled."
+    }
+  },
+  {
+    id: 'bookings-overtime',
+    title: 'Booking Overtime Estimate',
+    category: 'Bookings & QR',
+    method: 'GET',
+    path: '/api/v1/bookings/{booking_id}/overtime/',
+    auth: 'Bearer JWT',
+    desc: 'Retrieves live estimated overstay calculations for active parking sessions. Real penalties are charged only upon gate checkout.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of the booking' }
+    ],
+    responseBody: {
+      is_overtime: true,
+      overstay_minutes: 75,
+      estimated_penalty_amount: "40.00",
+      penalty_rate_per_hour: "20.00"
+    }
+  },
+  {
+    id: 'bookings-qr',
+    title: 'Get Booking QR Pass',
+    category: 'Bookings & QR',
+    method: 'GET',
+    path: '/api/v1/bookings/{booking_id}/qr/',
+    auth: 'Bearer JWT (Owner)',
+    desc: 'Returns a PNG image representation of the signed cryptographically secure QR pass for check-in/checkout gate scan checks.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of the booking' }
+    ],
+    responseBody: "[Raw Image Payload / image/png]"
+  },
+  {
+    id: 'qr-entry',
+    title: 'Validate Entry Scan',
+    category: 'QR Gate Scans',
+    method: 'POST',
+    path: '/api/v1/qr/entry/',
+    auth: 'Bearer JWT (Guard)',
+    desc: 'Submitted by gate guards equipped with can_scan_entry permissions. Decrypts the signed QR token, registers gate entry time, sets booking state to active, and marks slot occupied.',
+    params: [
+      { name: 'qr_token', type: 'string', required: true, desc: 'Signed, cryptographically secure booking QR token' }
+    ],
+    requestBody: {
+      qr_token: "signed-booking-qr-token-abcde..."
+    },
+    responseBody: {
+      status: "entry_granted",
+      booking_id: "bkg_0z9y8x7w",
+      booking_number: "BK-20260518-ABC123",
+      slot_number: "A-101",
+      vehicle_number: "MH01AB1234",
+      owner_name: "Example User",
+      payment_status: "captured",
+      entry_time: "2026-05-18T14:05:00+05:30",
+      exit_time: null,
+      overstay: false,
+      penalty: null
+    }
+  },
+  {
+    id: 'qr-exit',
+    title: 'Validate Exit Scan',
+    category: 'QR Gate Scans',
+    method: 'POST',
+    path: '/api/v1/qr/exit/',
+    auth: 'Bearer JWT (Guard)',
+    desc: 'Validates visitor exit gate ticket passes. Updates slot status back to available. Auto-creates unpaid penalty logs if current time exceeds booking lease schedule parameters.',
+    params: [
+      { name: 'qr_token', type: 'string', required: true, desc: 'Signed booking QR token' }
+    ],
+    requestBody: {
+      qr_token: "signed-booking-qr-token-abcde..."
+    },
+    responseBody: {
+      status: "exit_granted",
+      booking_id: "bkg_0z9y8x7w",
+      exit_time: "2026-05-18T16:15:00+05:30",
+      overstay: false,
+      penalty: null
     }
   },
   {
@@ -304,31 +981,79 @@ const API_DOCS_DATA = [
     }
   },
   {
-    id: 'qr-entry',
-    title: 'Validate Entry Scan',
-    category: 'QR Gate Scans',
+    id: 'payments-verify-stripe',
+    title: 'Verify Stripe Payment',
+    category: 'Payments',
     method: 'POST',
-    path: '/api/v1/qr/entry/',
-    auth: 'Bearer JWT (Guard)',
-    desc: 'Submitted by gate guards equipped with can_scan_entry permissions. Decrypts the signed QR token, registers gate entry time, sets booking state to active, and marks slot occupied.',
+    path: '/api/v1/payments/verify/',
+    auth: 'Bearer JWT',
+    desc: 'Explicit checkout verification endpoint to sync Stripe session payments and activate locks.',
     params: [
-      { name: 'qr_token', type: 'string', required: true, desc: 'Signed, cryptographically secure booking QR token' }
+      { name: 'checkout_session_id', type: 'string', required: true, desc: 'Stripe checkout session ID' }
     ],
     requestBody: {
-      qr_token: "signed-booking-qr-token-abcde..."
+      checkout_session_id: "cs_test_a1b2c3d4"
     },
     responseBody: {
-      status: "entry_granted",
-      booking_id: "bkg_0z9y8x7w",
-      booking_number: "BK-20260518-ABC123",
-      slot_number: "A-101",
-      vehicle_number: "MH01AB1234",
-      owner_name: "Example User",
-      payment_status: "captured",
-      entry_time: "2026-05-18T14:05:00+05:30",
-      exit_time: null,
-      overstay: false,
-      penalty: null
+      id: "pay_1c2d3e4f",
+      status: "captured",
+      booking: "bkg_0z9y8x7w",
+      amount: "100.00"
+    }
+  },
+  {
+    id: 'payments-verify-razorpay',
+    title: 'Verify Razorpay Payment',
+    category: 'Payments',
+    method: 'POST',
+    path: '/api/v1/payments/razorpay/verify/',
+    auth: 'Bearer JWT',
+    desc: 'Validates Razorpay signatures and updates transaction statuses.',
+    params: [
+      { name: 'razorpay_order_id', type: 'string', required: true, desc: 'Razorpay order identifier' },
+      { name: 'razorpay_payment_id', type: 'string', required: true, desc: 'Razorpay payment receipt ID' },
+      { name: 'razorpay_signature', type: 'string', required: true, desc: 'Cryptographic webhook signature hash' }
+    ],
+    requestBody: {
+      razorpay_order_id: "order_k2j138dj1",
+      razorpay_payment_id: "pay_j812n3d12",
+      razorpay_signature: "82a9b3dcd..."
+    },
+    responseBody: {
+      id: "pay_1c2d3e4f",
+      status: "captured",
+      booking: "bkg_0z9y8x7w"
+    }
+  },
+  {
+    id: 'payments-webhook',
+    title: 'Stripe Webhooks',
+    category: 'Payments',
+    method: 'POST',
+    path: '/api/v1/payments/webhook/',
+    auth: 'Stripe Signature',
+    desc: 'Handles asynchronous stripe checkout completion and payment failure event logs.',
+    params: [],
+    responseBody: {
+      status: "webhook processed"
+    }
+  },
+  {
+    id: 'payments-manual-verify',
+    title: 'Manual Stripe Verification',
+    category: 'Payments',
+    method: 'POST',
+    path: '/api/v1/payments/manual-verify/',
+    auth: 'Bearer JWT',
+    desc: 'Testing API helper route to manually finalize Stripe checkout orders in non-production instances.',
+    params: [
+      { name: 'checkout_session_id', type: 'string', required: true, desc: 'Stripe checkout session ID' }
+    ],
+    requestBody: {
+      checkout_session_id: "cs_test_a1b2c3d4"
+    },
+    responseBody: {
+      status: "manually_verified"
     }
   },
   {
@@ -351,6 +1076,243 @@ const API_DOCS_DATA = [
         status: "unpaid"
       }
     ]
+  },
+  {
+    id: 'penalties-pay',
+    title: 'Pay Penalty Ticket',
+    category: 'Penalties',
+    method: 'POST',
+    path: '/api/v1/penalties/{penalty_id}/pay/',
+    auth: 'Bearer JWT',
+    desc: 'Initiates a digital transaction session to settle outstanding penalty tickets.',
+    params: [
+      { name: 'penalty_id', type: 'string', required: true, desc: 'UUID of the penalty' }
+    ],
+    responseBody: {
+      id: "pay_pnl_2d3e4f",
+      payment_type: "penalty",
+      amount: "150.00",
+      checkout_url: "https://checkout.stripe.com/pay/cs_test_pnl_xxx"
+    }
+  },
+  {
+    id: 'admin-dashboard',
+    title: 'Platform Dashboard',
+    category: 'Admin APIs',
+    method: 'GET',
+    path: '/api/v1/admin/dashboard/',
+    auth: 'Super Admin',
+    desc: 'Provides administrative overview statistics detailing global site metrics.',
+    params: [],
+    responseBody: {
+      total_societies: 3,
+      active_societies: 3,
+      total_slots: 120,
+      total_bookings: 42,
+      total_revenue: "5500.00"
+    }
+  },
+  {
+    id: 'admin-society-stats',
+    title: 'Society Stats Review',
+    category: 'Admin APIs',
+    method: 'GET',
+    path: '/api/v1/admin/societies/{society_id}/stats/',
+    auth: 'Super Admin',
+    desc: 'Retrieves capacity logs, revenue metrics, booking counts, and occupancy percentages for any specified complex.',
+    params: [
+      { name: 'society_id', type: 'string', required: true, desc: 'UUID of target society' }
+    ],
+    responseBody: {
+      society_id: "soc_5e4f3g2h",
+      total_slots: 40,
+      booking_counts: 124,
+      total_revenue: "15000.00",
+      occupancy_rate: 65.5
+    }
+  },
+  {
+    id: 'admin-society-dashboard',
+    title: 'Society Admin Dashboard',
+    category: 'Admin APIs',
+    method: 'GET',
+    path: '/api/v1/admin/society/dashboard/',
+    auth: 'Society Admin',
+    desc: 'Retrieves operational status updates, guard registration counters, active slot bookings, and real-time gate log feeds.',
+    params: [],
+    responseBody: {
+      total_slots: 40,
+      active_bookings_count: 5,
+      guards_pending_count: 1,
+      guards_approved_count: 3,
+      currently_parked_count: 2
+    }
+  },
+  {
+    id: 'admin-society-guards',
+    title: 'Society Guard Requests',
+    category: 'Admin APIs',
+    method: 'GET',
+    path: '/api/v1/admin/society/guards/',
+    auth: 'Society Admin',
+    desc: 'Lists registrations requested by guards wanting clearance to scan entries/exits at the admin\'s complex gates.',
+    params: [
+      { name: 'status', type: 'string', required: false, desc: 'Filter state (e.g. "pending")' }
+    ],
+    responseBody: [
+      {
+        id: "grd_1a2b3c4d",
+        full_name: "Gate Guard",
+        email: "guard@example.com",
+        phone: "9876543222",
+        approval_status: "pending"
+      }
+    ]
+  },
+  {
+    id: 'admin-society-guard-approve',
+    title: 'Approve Guard Access',
+    category: 'Admin APIs',
+    method: 'POST',
+    path: '/api/v1/admin/society/guards/{guard_id}/approve/',
+    auth: 'Society Admin',
+    desc: 'Approves a guard\'s registration request to activate their scanning access.',
+    params: [
+      { name: 'guard_id', type: 'string', required: true, desc: 'UUID of the guard' },
+      { name: 'notes', type: 'string', required: false, desc: 'Review decision notes' }
+    ],
+    requestBody: {
+      notes: "Verified identity details at front desk."
+    },
+    responseBody: {
+      id: "grd_1a2b3c4d",
+      approval_status: "approved"
+    }
+  },
+  {
+    id: 'admin-society-guard-reject',
+    title: 'Reject Guard Access',
+    category: 'Admin APIs',
+    method: 'POST',
+    path: '/api/v1/admin/society/guards/{guard_id}/reject/',
+    auth: 'Society Admin',
+    desc: 'Rejects a guard\'s registration request, blocking login capabilities.',
+    params: [
+      { name: 'guard_id', type: 'string', required: true, desc: 'UUID of the guard' },
+      { name: 'notes', type: 'string', required: false, desc: 'Review decision notes' }
+    ],
+    requestBody: {
+      notes: "Invalid phone reference number details."
+    },
+    responseBody: {
+      id: "grd_1a2b3c4d",
+      approval_status: "rejected"
+    }
+  },
+  {
+    id: 'admin-refund-lookup',
+    title: 'Refund Lookup Audit',
+    category: 'Admin APIs',
+    method: 'GET',
+    path: '/api/v1/admin/refunds/lookup/',
+    auth: 'Super Admin',
+    desc: 'Retrieves booking, payment logs, and partial refund audit trails before confirming payout waivers.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of target booking' }
+    ],
+    responseBody: {
+      booking_id: "bkg_0z9y8x7w",
+      booking_number: "BK-20260518-ABC123",
+      user_name: "Example User",
+      user_email: "user@example.com",
+      booking_status: "active",
+      booking_amount: "100.00",
+      payment_id: "pay_1c2d3e4f",
+      payment_status: "captured",
+      amount_paid: "100.00",
+      max_refundable: "100.00",
+      already_refunded: "0.00",
+      past_refunds: []
+    }
+  },
+  {
+    id: 'admin-refund-list',
+    title: 'Audit Refund Trails',
+    category: 'Admin APIs',
+    method: 'GET',
+    path: '/api/v1/admin/refunds/',
+    auth: 'Super Admin',
+    desc: 'Lists logs of the 100 most recent refunds issued across the payment networks for audit.',
+    params: [],
+    responseBody: [
+      {
+        id: "ref_88776655",
+        payment: "pay_1c2d3e4f",
+        booking: "bkg_0z9y8x7w",
+        booking_number: "BK-20260518-ABC123",
+        initiated_by_name: "Super Admin",
+        refund_amount: "50.00",
+        reason: "Accidental overstay charge waived",
+        provider_refund_id: "re_test_9988",
+        payment_provider: "stripe",
+        status: "succeeded",
+        is_full_refund: false,
+        created_at: "2026-05-18T16:30:00+05:30"
+      }
+    ]
+  },
+  {
+    id: 'admin-refund-initiate',
+    title: 'Initiate Refund Payout',
+    category: 'Admin APIs',
+    method: 'POST',
+    path: '/api/v1/admin/refunds/',
+    auth: 'Super Admin',
+    desc: 'Initiates a partial or full refund through Stripe or Razorpay for captured booking tickets.',
+    params: [
+      { name: 'booking_id', type: 'string', required: true, desc: 'UUID of booking' },
+      { name: 'refund_amount', type: 'string', required: true, desc: 'Decimal refund amount' },
+      { name: 'reason', type: 'string', required: true, desc: 'Audit reason description' }
+    ],
+    requestBody: {
+      booking_id: "bkg_0z9y8x7w",
+      refund_amount: "50.00",
+      reason: "Customer cancelled before check-in"
+    },
+    responseBody: {
+      id: "ref_88776655",
+      payment: "pay_1c2d3e4f",
+      booking: "bkg_0z9y8x7w",
+      booking_number: "BK-20260518-ABC123",
+      initiated_by: "usr_super_admin",
+      initiated_by_name: "Super Admin",
+      refund_amount: "50.00",
+      reason: "Customer cancelled before check-in",
+      provider_refund_id: "re_test_9988",
+      payment_provider: "stripe",
+      status: "succeeded",
+      is_full_refund: false,
+      created_at: "2026-05-18T16:30:00+05:30"
+    }
+  }
+];
+
+const FAQ_DATA = [
+  {
+    question: "How do QR passes remain secure against screen tampering or screenshot cloning?",
+    answer: "ParkEase employs JSON Web Token (JWT) signatures in every QR code containing time-sensitive expiration nonces. Gate passes rotate nonces every 60 seconds. Static screenshots or cloned images instantly trigger expiry failures when checked by a guard's scanning app."
+  },
+  {
+    question: "What if the gate guard scanner loses internet connectivity?",
+    answer: "Our gate scanners operate with cryptographic public-key validation. The scanner checks the digital signature inside the QR code locally using a cached key pair. This allows gate entries/exits to be authenticated in under a second completely offline, queueing sync logs for when connectivity resumes."
+  },
+  {
+    question: "How are slot owners paid for leasing their parking slots?",
+    answer: "Bookings automatically register payouts based on the hourly rates set by the owner. When visitors settle payments through Stripe or Razorpay, funds route to our escrow wallet. Payout balances accumulate in real-time and clear monthly directly into slot owners' connected bank accounts."
+  },
+  {
+    question: "Do housing complexes need to install expensive barrier hardware?",
+    answer: "No. ParkEase is fully hardware-agnostic and functions as a standard software SaaS. Security guards scan codes directly on their standard Android or iOS mobile phones. If physical barriers exist, we offer an optional IoT integration to trigger gate-open relays over local Wi-Fi."
   }
 ];
 
@@ -460,6 +1422,7 @@ function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   // Stripe/Supabase Style Portal States
   const [currentView, setCurrentView] = useState('landing'); // 'landing' or 'docs'
@@ -1196,6 +2159,7 @@ function App() {
             <li><a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a></li>
             <li><a href="#how-it-works" onClick={(e) => { e.preventDefault(); scrollToSection('how-it-works'); }}>How It Works</a></li>
             <li><a href="#security" onClick={(e) => { e.preventDefault(); scrollToSection('security'); }}>Security</a></li>
+            <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }}>FAQ</a></li>
           </ul>
 
           <div className="navbar-actions">
@@ -1231,6 +2195,7 @@ function App() {
             <a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}>Features</a>
             <a href="#how-it-works" onClick={(e) => { e.preventDefault(); scrollToSection('how-it-works'); }}>How It Works</a>
             <a href="#security" onClick={(e) => { e.preventDefault(); scrollToSection('security'); }}>Security</a>
+            <a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }}>FAQ</a>
             <a href="#api-docs" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); setCurrentView('docs'); playBeep(520, 80); }}>
               <Code size={16} />
               <span>API Docs</span>
@@ -2047,6 +3012,96 @@ function App() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================
+         7.5 INTERACTIVE FAQ SECTION
+         ==================================================== */}
+      <section className="faq-section" id="faq">
+        <div className="container">
+          <div className="section-header" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <div className="badge badge-glow" style={{ margin: '0 auto 12px auto' }}>
+              <Info size={14} />
+              <span>Have Questions?</span>
+            </div>
+            <h2 style={{ fontSize: '32px' }}>Frequently Asked <span className="text-gradient">Questions</span></h2>
+            <p className="subheadline" style={{ margin: '12px auto 0 auto', maxWidth: '600px' }}>
+              Learn more about the cryptographic security, offline capabilities, and deployment steps of the ParkEase platform.
+            </p>
+          </div>
+
+          <div className="faq-accordion-wrapper" style={{ maxWidth: '760px', margin: '0 auto' }}>
+            {FAQ_DATA.map((faq, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className={`faq-item ${isOpen ? 'active' : ''}`}
+                  style={{
+                    marginBottom: '16px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(15, 23, 42, 0.05)',
+                    background: '#ffffff',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setOpenFaqIndex(isOpen ? null : idx);
+                      playBeep(520, 60);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '24px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      color: isOpen ? '#4f46e5' : 'var(--color-slate-800)'
+                    }}
+                  >
+                    <span>{faq.question}</span>
+                    <span style={{
+                      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                      color: isOpen ? '#4f46e5' : 'var(--color-slate-400)',
+                      fontWeight: 'bold',
+                      fontSize: '18px'
+                    }}>
+                      ▾
+                    </span>
+                  </button>
+                  <div
+                    style={{
+                      maxHeight: isOpen ? '200px' : '0',
+                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                      opacity: isOpen ? 1 : 0
+                    }}
+                  >
+                    <p
+                      style={{
+                        padding: '0 24px 24px 24px',
+                        fontSize: '14px',
+                        color: 'var(--color-slate-500)',
+                        lineHeight: '1.6',
+                        margin: 0
+                      }}
+                    >
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
